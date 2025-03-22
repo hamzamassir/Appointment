@@ -1,0 +1,27 @@
+<?php
+/**
+ * Implements hook_mail().
+ */
+function appointment_mail($key, &$message, $params) {
+    // Get module's path using the extension.list.module service.
+    $module_path = \Drupal::service('extension.list.module')->getPath('appointment');
+  
+    switch ($key) {
+      case 'new_appointment_advisor':
+        $message['subject'] = $params['subject'];
+        $template_path = $module_path . '/templates/appointment-email--advisor.html.twig';
+        // Render the Twig template using the twig service.
+        $twig = \Drupal::service('twig');
+        $body = $twig->render($template_path, $params);
+        $message['body'][] = $body;
+        break;
+  
+      case 'new_appointment_user':
+        $message['subject'] = $params['subject'];
+        $template_path = $module_path . '/templates/appointment-email--user.html.twig';
+        $twig = \Drupal::service('twig');
+        $body = $twig->render($template_path, $params);
+        $message['body'][] = $body;
+        break;
+    }
+  }

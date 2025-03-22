@@ -1,0 +1,15 @@
+administer appointment:
+  title: 'Administer appointment settings'
+  description: 'Allow access to the appointment settings page,also Create, edit, and delete appointments'
+  restrict access: TRUE
+administer agency:
+  title: 'Administer agencies'
+  description: 'Create, edit, and delete agencies'
+  restrict access: TRUE
+
+view agency:
+  title: 'View agencies'
+  description: 'View agencies'
+administer appointment_agency:
+  title: 'Administer agencies'
+  description: 'Create, edit, and delete agencies'

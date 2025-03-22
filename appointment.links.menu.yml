@@ -1,0 +1,22 @@
+entity.appointment.collection:
+  title: 'Appointments'
+  description: 'List of appointments'
+  route_name: entity.appointment.collection
+  parent: system.admin_content
+appointment.appointments_view:
+  title: 'Appointments'
+  description: 'View all appointments'
+  route_name: view.appointments.page_1
+  menu_name: main
+  weight: 10
+appointment.book:
+  title: 'Book an Appointment'
+  description: 'Book a new appointment'
+  route_name: appointment.book
+  menu_name: main
+  weight: 10
+appointment.add_adviser:
+  title: 'Add Adviser'
+  description: 'Add a new adviser'
+  parent: entity.user.collection
+  route_name: appointment.add_adviser

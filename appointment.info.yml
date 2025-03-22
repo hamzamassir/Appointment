@@ -1,0 +1,10 @@
+name: Appointment Booking System
+type: module
+description: 'Provides appointment booking functionality with agencies and advisers.'
+package: Custom
+core_version_requirement: ^9 || ^10 || ^11
+dependencies:
+  - drupal:datetime
+  - drupal:views
+  - drupal:telephone
+  - drupal:user

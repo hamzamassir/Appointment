@@ -1,0 +1,70 @@
+entity.appointment.settings:
+  path: 'admin/structure/appointment'
+  defaults:
+    _form: '\Drupal\appointment\Form\AppointmentSettingsForm'
+    _title: 'Appointment Settings'
+  requirements:
+    _permission: 'administer appointment'
+# List all appointments
+entity.appointment.collection:
+  path: '/admin/content/appointments'
+  defaults:
+    _entity_list: 'appointment'
+    _title: 'Appointments'
+  requirements:
+    _permission: 'administer appointment'
+
+# Add new appointment
+entity.appointment.add_form:
+  path: '/appointment/add'
+  defaults:
+    _entity_form: 'appointment.add'
+    _title: 'Add Appointment'
+  requirements:
+    _permission: 'administer appointment'
+
+# Edit appointment
+entity.appointment.edit_form:
+  path: '/appointment/{appointment}/edit'
+  defaults:
+    _entity_form: 'appointment.edit'
+    _title: 'Edit Appointment'
+  requirements:
+    _permission: 'administer appointment'
+
+# Delete appointment
+entity.appointment.delete_form:
+  path: '/appointment/{appointment}/delete'
+  defaults:
+    _entity_form: 'appointment.delete'
+    _title: 'Delete Appointment'
+  requirements:
+    _permission: 'administer appointment'
+appointment.select_agency:
+  path: '/appointment/select-agency'
+  defaults:
+    _form: '\Drupal\appointment\Form\AgencySelectionForm'
+    _title: 'Select Agency'
+  requirements:
+    _permission: 'access content'
+appointment.book:
+  path: '/appointment/book'
+  defaults:
+    _form: '\Drupal\appointment\Form\AppointmentMultiStepForm'
+    _title: 'Book an Appointment'
+  requirements:
+    _permission: 'access content'
+appointment.add_adviser:
+  path: '/admin/people/add-adviser'
+  defaults:
+    _form: '\Drupal\appointment\Form\AdviserForm'
+    _title: 'Add Adviser'
+  requirements:
+    _permission: 'administer users'
+appointment.modify:
+  path: '/appointment/modification'
+  defaults:
+    _form: '\Drupal\appointment\Form\AppointmentModifyForm'
+    _title: 'Book an Appointment'
+  requirements:
+    _permission: 'access content'

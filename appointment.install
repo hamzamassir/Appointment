@@ -1,0 +1,111 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for the appointment module.
+ */
+
+use Drupal\Core\Entity\EntityStorageException;
+
+/**
+ * Implements hook_install().
+ */
+function appointment_install() {
+  // Get the vocabulary storage.
+  $vocab_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_vocabulary');
+  
+  // Check if the "specializations" vocabulary exists.
+  $vocabulary = $vocab_storage->load('specializations');
+  if (!$vocabulary) {
+    // If not, create the vocabulary.
+    $vocabulary = $vocab_storage->create([
+      'vid' => 'specializations',
+      'name' => 'Specializations',
+      'description' => 'Adviser specializations',
+    ]);
+    $vocabulary->save();
+  }
+  
+  // Define the default terms.
+  $default_terms = [
+    'Financial Advice',
+    'Career Counseling',
+    'Legal Consultation',
+    'Health Services',
+    'Education Guidance',
+  ];
+  
+  // Get the term storage.
+  $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+  
+  // Create each default term if it does not already exist.
+  foreach ($default_terms as $term_name) {
+    // Check for an existing term in the "specializations" vocabulary.
+    $existing_terms = $term_storage->loadByProperties([
+      'vid'  => 'specializations',
+      'name' => $term_name,
+    ]);
+    if (empty($existing_terms)) {
+      $term = $term_storage->create([
+        'vid'  => 'specializations',
+        'name' => $term_name,
+      ]);
+      $term->save();
+    }
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function appointment_uninstall() {
+  $entity_manager = \Drupal::entityTypeManager();
+  
+  // Delete custom entities if desired.
+  try {
+    // Example: Delete appointment entities.
+    $appointment_storage = $entity_manager->getStorage('appointment');
+    $appointments = $appointment_storage->loadMultiple();
+    foreach ($appointments as $appointment) {
+      $appointment->delete();
+    }
+    // Example: Delete agency entities.
+    $agency_storage = $entity_manager->getStorage('agency');
+    $agencies = $agency_storage->loadMultiple();
+    foreach ($agencies as $agency) {
+      $agency->delete();
+    }
+    \Drupal::logger('appointment')->notice('Appointments and agencies deleted successfully during uninstall.');
+  }
+  catch (EntityStorageException $e) {
+    \Drupal::logger('appointment')->error('Error deleting entities: @message', ['@message' => $e->getMessage()]);
+  }
+  
+  // Remove configuration objects if necessary.
+  $config_names = [
+    'field.field.user.user.field_agency',
+    'field.field.user.user.field_specializations',
+    'field.field.user.user.field_working_hours',
+    'field.storage.user.field_agency',
+    'field.storage.user.field_specializations',
+    'field.storage.user.field_working_hours',
+    'user.role.adviser',
+  ];
+  foreach ($config_names as $config_name) {
+    \Drupal::service('config.factory')->getEditable($config_name)->delete();
+  }
+  
+  // Delete all taxonomy terms in the "specializations" vocabulary.
+  $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+  $terms = $term_storage->loadByProperties(['vid' => 'specializations']);
+  if ($terms) {
+    foreach ($terms as $term) {
+      $term->delete();
+    }
+  }
+  
+  // Finally, delete the vocabulary itself.
+  $vocab_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_vocabulary');
+  if ($vocabulary = $vocab_storage->load('specializations')) {
+    $vocabulary->delete();
+  }
+}
