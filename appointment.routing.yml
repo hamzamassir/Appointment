@@ -61,3 +61,10 @@ appointment.modify:
     _title: 'Book an Appointment'
   requirements:
     _permission: 'access content'
+appointment.export_csv:
+  path: '/admin/appointment/export'
+  defaults:
+    _controller: '\Drupal\appointment\Controller\AppointmentExportController::exportCsv'
+    _title: 'Export Appointment Data'
+  requirements:
+    _permission: 'administer site configuration'
