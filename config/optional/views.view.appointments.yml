@@ -2,11 +2,22 @@ langcode: en
 status: true
 dependencies:
   config:
+    - field.storage.appointment.field_specializations
     - system.menu.main
+    - taxonomy.vocabulary.specializations
+    - user.role.administrator
+  content:
+    - 'taxonomy_term:specializations:3ce2e4d2-0290-4187-860c-5b5e92cb1757'
+    - 'taxonomy_term:specializations:9a9fa2ad-d99b-4fa0-9cbc-dc3afb44e348'
+    - 'taxonomy_term:specializations:d05db3b7-9049-4c41-84a6-c448328b26e8'
+    - 'taxonomy_term:specializations:edd63dba-8659-4c75-9a2d-233b94e9727c'
+    - 'taxonomy_term:specializations:f53a7d9d-6e5a-4159-93bb-c776c373e9d2'
   module:
     - appointment
     - datetime
     - options
+    - taxonomy
+    - user
 id: appointments
 label: Appointments
 module: views
@@ -34,9 +45,66 @@ display:
           id: title
           table: appointment_field_data
           field: title
+          relationship: none
+          group_type: group
+          admin_label: ''
           entity_type: appointment
           entity_field: title
           label: Title
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: 1
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: 0
         agency:
           id: agency
           table: appointment_field_data
@@ -232,23 +300,15 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-        status:
-          id: status
-          table: appointment_field_data
-          field: status
-          entity_type: appointment
-          entity_field: status
-          label: Status
-        edit_appointment:
-          id: edit_appointment
-          table: appointment
-          field: edit_appointment
+        field_specializations:
+          id: field_specializations
+          table: appointment__field_specializations
+          field: field_specializations
           relationship: none
           group_type: group
           admin_label: ''
-          entity_type: appointment
-          plugin_id: entity_link_edit
-          label: 'Link to edit Appointment'
+          plugin_id: field
+          label: Specializations
           exclude: false
           alter:
             alter_text: false
@@ -289,9 +349,27 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          text: edit
-          output_url_as_text: false
-          absolute: false
+          click_sort_column: target_id
+          type: entity_reference_label
+          settings:
+            link: true
+          group_column: target_id
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        status:
+          id: status
+          table: appointment_field_data
+          field: status
+          entity_type: appointment
+          entity_field: status
+          label: Status
         operations:
           id: operations
           table: appointment
@@ -347,18 +425,230 @@ display:
         type: full
         options:
           items_per_page: 10
+      access:
+        type: role
+        options:
+          role:
+            administrator: administrator
+      sorts:
+        appointment_date:
+          id: appointment_date
+          table: appointment_field_data
+          field: appointment_date
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: appointment
+          entity_field: appointment_date
+          plugin_id: standard
+          order: ASC
+          expose:
+            label: ''
+            field_identifier: ''
+          exposed: false
+        field_specializations_target_id:
+          id: field_specializations_target_id
+          table: appointment__field_specializations
+          field: field_specializations_target_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: standard
+          order: ASC
+          expose:
+            label: ''
+            field_identifier: ''
+          exposed: false
+      filters:
+        field_specializations_target_id:
+          id: field_specializations_target_id
+          table: appointment__field_specializations
+          field: field_specializations_target_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: taxonomy_index_tid
+          operator: or
+          value:
+            88: 88
+            91: 91
+            87: 87
+            90: 90
+            89: 89
+          group: 1
+          exposed: true
+          expose:
+            operator_id: field_specializations_target_id_op
+            label: Specializations
+            description: ''
+            use_operator: false
+            operator: field_specializations_target_id_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: field_specializations_target_id
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              content_editor: '0'
+              administrator: '0'
+              adviser: '0'
+              webmaster: '0'
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          reduce_duplicates: false
+          vid: specializations
+          type: select
+          hierarchy: false
+          limit: true
+          error_message: true
+        name:
+          id: name
+          table: agency_field_data
+          field: name
+          relationship: agency
+          group_type: group
+          admin_label: ''
+          entity_type: agency
+          entity_field: name
+          plugin_id: string
+          operator: contains
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: name_op
+            label: Agency
+            description: ''
+            use_operator: false
+            operator: name_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: name
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              content_editor: '0'
+              administrator: '0'
+              adviser: '0'
+              webmaster: '0'
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+        name_1:
+          id: name_1
+          table: users_field_data
+          field: name
+          relationship: adviser
+          group_type: group
+          admin_label: ''
+          entity_type: user
+          entity_field: name
+          plugin_id: string
+          operator: contains
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: name_1_op
+            label: Adviser
+            description: ''
+            use_operator: false
+            operator: name_1_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: name_1
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: '0'
+              content_editor: '0'
+              administrator: '0'
+              adviser: '0'
+              webmaster: '0'
+            placeholder: ''
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
       style:
         type: table
       row:
         type: fields
+      relationships:
+        agency:
+          id: agency
+          table: appointment_field_data
+          field: agency
+          relationship: none
+          group_type: group
+          admin_label: Agency
+          entity_type: appointment
+          entity_field: agency
+          plugin_id: standard
+          required: true
+        adviser:
+          id: adviser
+          table: appointment_field_data
+          field: adviser
+          relationship: none
+          group_type: group
+          admin_label: User
+          entity_type: appointment
+          entity_field: adviser
+          plugin_id: standard
+          required: true
       display_extenders: {  }
     cache_metadata:
       max-age: -1
       contexts:
         - 'languages:language_content'
         - 'languages:language_interface'
+        - url
         - url.query_args
-      tags: {  }
+        - user.roles
+      tags:
+        - 'config:field.storage.appointment.field_specializations'
   page_1:
     id: page_1
     display_title: Page
@@ -381,5 +671,8 @@ display:
       contexts:
         - 'languages:language_content'
         - 'languages:language_interface'
+        - url
         - url.query_args
-      tags: {  }
+        - user.roles
+      tags:
+        - 'config:field.storage.appointment.field_specializations'
