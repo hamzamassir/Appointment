@@ -20,3 +20,9 @@ appointment.add_adviser:
   description: 'Add a new adviser'
   parent: entity.user.collection
   route_name: appointment.add_adviser
+appointment.settings:
+  title: 'Appointment Settings'
+  description: 'Configure appointment settings and export data.'
+  route_name: entity.appointment.settings
+  parent: system.admin_config_content
+  weight: 100
