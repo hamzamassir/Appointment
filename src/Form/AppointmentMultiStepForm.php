@@ -6,6 +6,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Url;
 
 /**
  * Provides a multi-step form for booking appointments.
@@ -544,6 +545,7 @@ class AppointmentMultiStepForm extends FormBase
           // Create the appointment entity.
             $appointment = $this->entityTypeManager->getStorage('appointment')->create([
             'agency'            => $form_state->get('agency'),
+            'field_specializations'    => $form_state->get('specialization'),
             'adviser'           => $form_state->get('adviser'),
             'title'             => 'Appointment for ' . $form_state->getValue('name'),
             'customer_name'     => $form_state->getValue('name'),
@@ -598,7 +600,8 @@ class AppointmentMultiStepForm extends FormBase
             }
 
             $this->messenger()->addMessage($this->t('Your appointment has been booked successfully.'));
-            $form_state->setRedirect('entity.appointment.canonical', ['appointment' => $appointment_id]);
+            // $form_state->setRedirect('entity.appointment.canonical', ['appointment' => $appointment_id]);
+            $form_state->setRedirectUrl(Url::fromUri('internal:/appointment/modification'));
         } catch (\Exception $e) {
             $this->messenger()->addError($this->t('There was a problem booking your appointment. Please try again.'));
             \Drupal::logger('appointment')->error($e->getMessage());

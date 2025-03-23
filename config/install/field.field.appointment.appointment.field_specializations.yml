@@ -1,0 +1,35 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.appointment.field_specializations
+    - taxonomy.vocabulary.specializations
+  module:
+    - appointment
+    - taxonomy
+id: appointment.appointment.field_specializations
+field_name: field_specializations
+entity_type: appointment
+bundle: appointment
+label: 'Specializations'
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings:
+    target_bundles:
+      specializations: specializations
+field_type: entity_reference
+display:
+  default:
+    label: above
+    type: entity_reference_label
+    settings: {  }
+    weight: 10
+  form:
+    type: options_select
+    settings: {  }
+    weight: 10

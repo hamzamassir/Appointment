@@ -40,13 +40,6 @@ entity.appointment.delete_form:
     _title: 'Delete Appointment'
   requirements:
     _permission: 'administer appointment'
-appointment.select_agency:
-  path: '/appointment/select-agency'
-  defaults:
-    _form: '\Drupal\appointment\Form\AgencySelectionForm'
-    _title: 'Select Agency'
-  requirements:
-    _permission: 'access content'
 appointment.book:
   path: '/appointment/book'
   defaults:

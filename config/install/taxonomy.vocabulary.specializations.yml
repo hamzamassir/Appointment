@@ -1,0 +1,8 @@
+langcode: en
+status: true
+dependencies: {  }
+name: Specializations
+vid: specializations
+description: 'Adviser specializations'
+weight: 0
+new_revision: false
