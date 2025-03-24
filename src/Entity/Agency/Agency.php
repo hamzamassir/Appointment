@@ -126,39 +126,64 @@ class Agency extends ContentEntityBase
         ->setDisplayConfigurable('form', true)
         ->setDisplayConfigurable('view', true);
 
-    // Operating Hours
-        $fields['operating_hours_start'] = BaseFieldDefinition::create('string')
+        $fields['operating_hours_start'] = BaseFieldDefinition::create('list_string')
         ->setLabel(t('Opening Time'))
         ->setRequired(true)
         ->setSettings([
-        'max_length' => 5,
+          'allowed_values' => [
+            '08:00' => '08:00',
+            '09:00' => '09:00',
+            '10:00' => '10:00',
+            '11:00' => '11:00',
+            '12:00' => '12:00',
+            '13:00' => '13:00',
+            '14:00' => '14:00',
+            '15:00' => '15:00',
+            '16:00' => '16:00',
+            '17:00' => '17:00',
+            '18:00' => '18:00',
+            '19:00' => '19:00',
+          ],
         ])
         ->setDisplayOptions('view', [
-        'label' => 'above',
-        'type' => 'string',
-        'weight' => -1,
+          'label' => 'above',
+          'type' => 'list_default',
+          'weight' => -1,
         ])
         ->setDisplayOptions('form', [
-        'type' => 'string_textfield',
-        'weight' => -1,
+          'type' => 'options_select',
+          'weight' => -1,
         ])
         ->setDisplayConfigurable('form', true)
         ->setDisplayConfigurable('view', true);
 
-        $fields['operating_hours_end'] = BaseFieldDefinition::create('string')
+        $fields['operating_hours_end'] = BaseFieldDefinition::create('list_string')
         ->setLabel(t('Closing Time'))
         ->setRequired(true)
         ->setSettings([
-        'max_length' => 5,
+          'allowed_values' => [
+            '08:00' => '08:00',
+            '09:00' => '09:00',
+            '10:00' => '10:00',
+            '11:00' => '11:00',
+            '12:00' => '12:00',
+            '13:00' => '13:00',
+            '14:00' => '14:00',
+            '15:00' => '15:00',
+            '16:00' => '16:00',
+            '17:00' => '17:00',
+            '18:00' => '18:00',
+            '19:00' => '19:00',
+          ],
         ])
         ->setDisplayOptions('view', [
-        'label' => 'above',
-        'type' => 'string',
-        'weight' => 0,
+          'label' => 'above',
+          'type' => 'list_default',
+          'weight' => 0,
         ])
         ->setDisplayOptions('form', [
-        'type' => 'string_textfield',
-        'weight' => 0,
+          'type' => 'options_select',
+          'weight' => 0,
         ])
         ->setDisplayConfigurable('form', true)
         ->setDisplayConfigurable('view', true);

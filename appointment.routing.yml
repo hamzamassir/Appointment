@@ -58,7 +58,7 @@ appointment.modify:
   path: '/appointment/modification'
   defaults:
     _form: '\Drupal\appointment\Form\AppointmentModifyForm'
-    _title: 'Book an Appointment'
+    _title: 'Modify your Appointment'
   requirements:
     _permission: 'access content'
 appointment.export_csv:
@@ -68,3 +68,10 @@ appointment.export_csv:
     _title: 'Export Appointment Data'
   requirements:
     _permission: 'administer site configuration'
+appointment.adviser_list:
+  path: '/admin/people/advisers'
+  defaults:
+    _controller: '\Drupal\appointment\Controller\AdviserController::listAdvisers'
+    _title: 'Adviser List'
+  requirements:
+    _permission: 'administer users'

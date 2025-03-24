@@ -7,6 +7,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Password\PasswordGeneratorInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\user\Entity\User;
 
 /**
  * Provides a form for creating advisers.
@@ -35,10 +36,8 @@ class AdviserForm extends FormBase
    * @param \Drupal\Core\Password\PasswordGeneratorInterface $password_generator
    *   The password generator.
    */
-    public function __construct(
-        EntityTypeManagerInterface $entity_type_manager,
-        PasswordGeneratorInterface $password_generator
-    ) {
+    public function __construct(EntityTypeManagerInterface $entity_type_manager, PasswordGeneratorInterface $password_generator)
+    {
         $this->entityTypeManager = $entity_type_manager;
         $this->passwordGenerator = $password_generator;
     }
@@ -63,10 +62,11 @@ class AdviserForm extends FormBase
     }
 
   /**
-   * {@inheritdoc}
+   * Build the adviser creation form.
    */
     public function buildForm(array $form, FormStateInterface $form_state)
     {
+      // Adviser basic details.
         $form['name'] = [
         '#type' => 'textfield',
         '#title' => $this->t('Name'),
@@ -79,30 +79,31 @@ class AdviserForm extends FormBase
         '#required' => true,
         ];
 
-      // Get all agencies
-        $agencies = $this->entityTypeManager->getStorage('agency')
-        ->loadMultiple();
+      // Agency select.
+        $agencies = $this->entityTypeManager->getStorage('agency')->loadMultiple();
         $agency_options = [];
         foreach ($agencies as $agency) {
             $agency_options[$agency->id()] = $agency->label();
         }
-
         $form['agency'] = [
         '#type' => 'select',
         '#title' => $this->t('Agency'),
         '#options' => $agency_options,
         '#required' => true,
         '#empty_option' => $this->t('- Select an agency -'),
+        '#ajax' => [
+        'callback' => '::updateWorkingHours',
+        'wrapper' => 'working-hours-wrapper',
+        'event' => 'change',
+        ],
         ];
 
-      // Get all specializations
-        $specializations = $this->entityTypeManager->getStorage('taxonomy_term')
-        ->loadByProperties(['vid' => 'specializations']);
+      // Specializations checkboxes.
+        $specializations = $this->entityTypeManager->getStorage('taxonomy_term')->loadByProperties(['vid' => 'specializations']);
         $specialization_options = [];
         foreach ($specializations as $term) {
             $specialization_options[$term->id()] = $term->label();
         }
-
         $form['specializations'] = [
         '#type' => 'checkboxes',
         '#title' => $this->t('Specializations'),
@@ -110,38 +111,61 @@ class AdviserForm extends FormBase
         '#required' => true,
         ];
 
+      // Working hours: dynamically generated based on the selected agency.
+        $agency_id = $form_state->getValue('agency');
+        $working_hours_options = [];
+        if (!empty($agency_id)) {
+            $agency = $this->entityTypeManager->getStorage('agency')->load($agency_id);
+            if ($agency) {
+                $start_time = $agency->get('operating_hours_start')->value;
+                $end_time = $agency->get('operating_hours_end')->value;
+                if (!empty($start_time) && !empty($end_time)) {
+                    $start = strtotime($start_time);
+                    $end = strtotime($end_time);
+                    // Generate options in one-hour increments.
+                    for ($time = $start; $time < $end; $time += 3600) {
+                        $formatted = date('H:i', $time);
+                        $working_hours_options[$formatted] = $formatted;
+                    }
+                }
+            }
+        } else {
+          // No agency selected yet.
+            $working_hours_options = [];
+        }
         $form['working_hours'] = [
         '#type' => 'checkboxes',
         '#title' => $this->t('Working Hours'),
-        '#options' => [
-        '09:00' => '09:00',
-        '10:00' => '10:00',
-        '11:00' => '11:00',
-        '12:00' => '12:00',
-        '13:00' => '13:00',
-        '14:00' => '14:00',
-        '15:00' => '15:00',
-        '16:00' => '16:00',
-        '17:00' => '17:00',
-        ],
+        '#options' => $working_hours_options,
         '#required' => true,
-        '#description' => $this->t('Select available working hours'),
-
+        '#description' => $this->t('Select the available working hours for the adviser based on the agency operating hours.'),
+        '#prefix' => '<div id="working-hours-wrapper">',
+        '#suffix' => '</div>',
         ];
 
-        // Changed from password_confirm to regular password field
+      // Password field.
         $form['password'] = [
-            '#type' => 'password',
-            '#title' => $this->t('Password'),
-            '#required' => true,
-            '#attributes' => ['autocomplete' => 'new-password'],
+        '#type' => 'password',
+        '#title' => $this->t('Password'),
+        '#required' => true,
+        '#attributes' => ['autocomplete' => 'new-password'],
         ];
 
+      // Submit button.
         $form['submit'] = [
         '#type' => 'submit',
         '#value' => $this->t('Create Adviser'),
         ];
+
         return $form;
+    }
+
+  /**
+   * AJAX callback to update the working hours based on the selected agency.
+   */
+    public function updateWorkingHours(array &$form, FormStateInterface $form_state)
+    {
+        return $form['working_hours'];
     }
 
   /**
@@ -149,37 +173,35 @@ class AdviserForm extends FormBase
    */
     public function validateForm(array &$form, FormStateInterface $form_state)
     {
-      // Check if email already exists
-        $existing_user = $this->entityTypeManager->getStorage('user')
+      // Check if email already exists.
+        $existing_users = $this->entityTypeManager->getStorage('user')
         ->loadByProperties(['mail' => $form_state->getValue('email')]);
-        if (!empty($existing_user)) {
+        if (!empty($existing_users)) {
             $form_state->setErrorByName('email', $this->t('Email address already exists.'));
         }
     }
 
   /**
- * {@inheritdoc}
- */
+   * {@inheritdoc}
+   */
     public function submitForm(array &$form, FormStateInterface $form_state)
     {
         try {
-        // Prepare the specializations data.
+          // Prepare specializations data.
             $selected_specializations = array_filter($form_state->getValue('specializations'));
             $specializations = [];
             foreach ($selected_specializations as $id) {
-                // Build the structure required for an entity reference field.
                 $specializations[] = ['target_id' => $id];
             }
 
-        // Prepare the working hours data.
+          // Prepare working hours data.
             $selected_working_hours = array_filter($form_state->getValue('working_hours'));
             $working_hours = [];
             foreach ($selected_working_hours as $hour) {
-                // Assuming your working hours field is configured as a list/text field.
                 $working_hours[] = ['value' => $hour];
             }
 
-        // Create new user with adviser role.
+          // Create new adviser user.
             $user = $this->entityTypeManager->getStorage('user')->create([
             'name' => $form_state->getValue('name'),
             'mail' => $form_state->getValue('email'),
@@ -190,14 +212,11 @@ class AdviserForm extends FormBase
             'field_specializations' => $specializations,
             'field_working_hours' => $working_hours,
             ]);
-
             $user->save();
 
             $this->messenger()->addMessage($this->t('Adviser @name created successfully.', [
             '@name' => $form_state->getValue('name'),
             ]));
-
-        // Redirect to user list.
             $form_state->setRedirect('entity.user.collection');
         } catch (\Exception $e) {
             $this->messenger()->addError($this->t('Error creating adviser: @error', [
