@@ -19,13 +19,13 @@ class AgencyAccessControlHandler extends EntityAccessControlHandler
     {
         switch ($operation) {
             case 'view':
-                return AccessResult::allowedIfHasPermission($account, 'view appointment');
+                return AccessResult::allowedIfHasPermission($account, 'view agency');
 
             case 'update':
-                return AccessResult::allowedIfHasPermission($account, 'edit appointment');
+                return AccessResult::allowedIfHasPermission($account, 'edit agency');
 
             case 'delete':
-                return AccessResult::allowedIfHasPermission($account, 'delete appointment');
+                return AccessResult::allowedIfHasPermission($account, 'delete agency');
         }
 
         return AccessResult::neutral();
@@ -36,6 +36,6 @@ class AgencyAccessControlHandler extends EntityAccessControlHandler
    */
     protected function checkCreateAccess(AccountInterface $account, array $context, $entity_bundle = null)
     {
-        return AccessResult::allowedIfHasPermission($account, 'create appointment');
+        return AccessResult::allowedIfHasPermission($account, 'create agency');
     }
 }

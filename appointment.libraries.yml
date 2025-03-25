@@ -1,0 +1,14 @@
+# appointment.libraries.yml
+fullcalendar:
+  version: 1.x
+  js:
+    https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js: { type: external, minified: true }
+    js/appointment.fullcalendar.js: {}
+  css:
+    theme:
+      https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css: { type: external }
+  dependencies:
+    - core/drupal
+    - core/jquery
+    - core/once
+    - core/drupalSettings

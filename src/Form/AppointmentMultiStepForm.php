@@ -263,126 +263,239 @@ class AppointmentMultiStepForm extends FormBase
     {
         $form['step_title'] = $this->buildStepTitle('Step 4: Select Date and Time');
 
-      // Load adviser and agency.
+      // Get the selected date from the previous step
+        $selected_date = $form_state->get('date') ?: date('Y-m-d');
+
+      // Debug log
+        \Drupal::logger('appointment')->notice('Building Step 4 with date: @date', [
+          '@date' => $selected_date
+        ]);
+
+      // Load adviser and agency
         $adviser_id = $form_state->get('adviser');
         $agency_id = $form_state->get('agency');
         $adviser = $this->entityTypeManager->getStorage('user')->load($adviser_id);
         $agency = $this->entityTypeManager->getStorage('agency')->load($agency_id);
 
-      // Render the date field.
-        $form['date'] = [
-        '#type' => 'date',
-        '#title' => $this->t('Select Date'),
-        '#required' => true,
-        '#min' => date('Y-m-d'),
-        '#max' => date('Y-m-d', strtotime('+30 days')),
-        ];
-
-      // Process only if a date has been submitted.
-        $selected_date = $form_state->getValue('date');
-        if ($selected_date) {
-          // Get the weekday of the selected date (e.g., "sunday") in lowercase.
-            $selected_day = strtolower(date('l', strtotime($selected_date)));
-            \Drupal::logger('appointment')->debug('Selected date: @date, which is @day', [
-            '@date' => $selected_date,
-            '@day' => $selected_day,
-            ]);
-
-          // Load allowed operating days from agency.
-          // Note: The agency field machine name is "operating_days" and values are stored under "value".
-            $operating_days_values = $agency->get('operating_days')->getValue();
-            $allowed_days = [];
-            if (!empty($operating_days_values)) {
-                foreach ($operating_days_values as $day_entry) {
-                    $allowed_days[] = strtolower(trim($day_entry['value']));
-                }
+      // Get operating days from agency
+        $operating_days_values = $agency->get('operating_days')->getValue();
+        $operating_days = [];
+        if (!empty($operating_days_values)) {
+            foreach ($operating_days_values as $day_entry) {
+                $operating_days[] = strtolower(trim($day_entry['value']));
             }
-            \Drupal::logger('appointment')->debug('Allowed operating days for agency @agency: @days', [
-            '@agency' => $agency->label(),
-            '@days' => implode(', ', $allowed_days),
-            ]);
+        }
 
-          // If the selected day is not in the allowed days, warn the user and revert back to step 3.
-            if (!in_array($selected_day, $allowed_days)) {
-                $this->messenger()->addWarning($this->t('The selected day (@day) is not an operating day for this agency. Please select another day.', ['@day' => ucfirst($selected_day)]));
-                $form_state->set('step', 3);
+      // Check if selected date is an operating day
+        $selected_day = strtolower(date('l', strtotime($selected_date)));
+        if (!in_array($selected_day, $operating_days)) {
+            \Drupal::logger('appointment')->notice('Selected day (@day) is not an operating day. Operating days: @operating_days', [
+              '@day' => $selected_day,
+              '@operating_days' => implode(', ', $operating_days)
+            ]);
+            $this->messenger()->addWarning($this->t('The selected day (@day) is not an operating day for this agency. Please select another day.', [
+              '@day' => ucfirst($selected_day)
+            ]));
+            $form_state->set('step', 3);
                 $form_state->setRebuild(true);
                 return $this->buildStepThree($form, $form_state);
-            }
+        }
 
-          // Otherwise, process available time slots.
-            $working_hours = [];
+      // Get working hours
+        $working_hours = [];
+        if ($adviser->hasField('field_working_hours') && !$adviser->get('field_working_hours')->isEmpty()) {
             foreach ($adviser->get('field_working_hours')->getValue() as $hour) {
-              // Use the "value" key, e.g. "09:00".
-                $stored_time = $hour['value'];
-              // Normalize by removing the colon: "09:00" becomes "0900".
-                $time_slot_key = str_replace(':', '', $stored_time);
-                $working_hours[$time_slot_key] = $stored_time;
-            }
-
-          // Query for appointments for this adviser.
-            $query = $this->entityTypeManager->getStorage('appointment')->getQuery()
-            ->condition('adviser', $adviser_id)
-            ->accessCheck(false);
-            $appointment_ids = $query->execute();
-
-            $booked_slots = [];
-            if (!empty($appointment_ids)) {
-                $appointments = $this->entityTypeManager->getStorage('appointment')->loadMultiple($appointment_ids);
-                foreach ($appointments as $appointment) {
-                  // Extract the date part (first 10 characters) from appointment_date.
-                    $appt_date = substr($appointment->get('appointment_date')->value, 0, 10);
-                    if ($appt_date === $selected_date) {
-                        // Retrieve the booked time slot (e.g., "0900").
-                        $booked_slots[] = $appointment->get('time_slot')->value;
-                    }
+                $time = $hour['value'];
+                // Ensure proper time format
+                if (strlen($time) === 4) {
+                    $time = substr($time, 0, 2) . ':' . substr($time, 2, 2);
                 }
-            }
-            \Drupal::logger('appointment')->debug('Booked slots for @date: @slots', [
-            '@date' => $selected_date,
-            '@slots' => implode(', ', $booked_slots),
-            ]);
-
-          // Filter working hours to show only available options.
-            $available_options = [];
-            foreach ($working_hours as $key => $stored_time) {
-                if (!in_array($key, $booked_slots)) {
-                    $available_options[$key] = $stored_time;
-                }
-            }
-
-            if (!empty($available_options)) {
-                $form['time'] = [
-                '#type' => 'radios',
-                '#title' => $this->t('Available Time Slots'),
-                '#options' => $available_options,
-                '#required' => true,
-                '#attributes' => ['class' => ['time-slots-grid']],
-                ];
-            } else {
-                $form['time'] = [
-                '#type' => 'markup',
-                '#markup' => '<p>' . $this->t('No available time slots for the selected day. Please choose another day.') . '</p>',
+                $working_hours[] = [
+                  'time' => $time,
+                  'formatted' => date('g:i A', strtotime($time))
                 ];
             }
         }
 
-      // Build Back and Next buttons.
-        $form['actions'] = $this->buildActions([
-        'back' => [
-        '#type' => 'submit',
-        '#value' => $this->t('Back'),
-        '#submit' => ['::backToPrevious'],
-        '#limit_validation_errors' => [],
-        ],
-        'next' => [
-        '#type' => 'submit',
-        '#value' => $this->t('Next'),
-        '#submit' => ['::submitStepFour'],
-        ],
+        // Query for appointments for this adviser.
+        $query = $this->entityTypeManager->getStorage('appointment')->getQuery()
+        ->condition('adviser', $adviser_id)
+        ->accessCheck(false);
+        $appointment_ids = $query->execute();
+
+        $booked_slots = [];
+        if (!empty($appointment_ids)) {
+            $appointments = $this->entityTypeManager->getStorage('appointment')->loadMultiple($appointment_ids);
+            foreach ($appointments as $appointment) {
+              // Extract the date part (first 10 characters) from appointment_date.
+                $appt_date = substr($appointment->get('appointment_date')->value, 0, 10);
+                if ($appt_date === $selected_date) {
+                    // Retrieve the booked time slot (e.g., "0900").
+                    $booked_slots[] = $appointment->get('time_slot')->value;
+                }
+            }
+        }
+        \Drupal::logger('appointment')->debug('Booked slots for @date: @slots', [
+        '@date' => $selected_date,
+        '@slots' => implode(', ', $booked_slots),
         ]);
 
+      // Calculate available slots
+        $available_slots = array_filter($working_hours, function ($slot) use ($booked_slots) {
+            $slot_value = str_replace(':', '', $slot['time']);
+            return !in_array($slot_value, $booked_slots);
+        });
+
+      // Debug log available slots
+        \Drupal::logger('appointment')->notice('Available
+        slots: @slots', [
+          '@slots' => print_r(array_values($available_slots), true)
+        ]);
+        \Drupal::logger('appointment')->notice('booked slots: @slots', [
+          '@slots' => print_r($booked_slots, true)
+        ]);\Drupal::logger('appointment')->notice('appointmments id : @slots', [
+          '@slots' => print_r($appointment_ids, true)
+        ]);
+
+      // Attach the FullCalendar library
+        $form['#attached']['library'][] = 'appointment/fullcalendar';
+
+      // Pass data to JavaScript
+        $form['#attached']['drupalSettings']['appointment'] = [
+          'availableSlots' => array_values($available_slots),
+          'selectedDate' => $selected_date,
+          'operatingDays' => array_map('strtolower', $operating_days), // Make sure they're lowercase
+          'bookedSlots' => $booked_slots,
+        ];
+
+      // Calendar container
+        $form['calendar_wrapper'] = [
+          '#type' => 'container',
+          '#attributes' => [
+              'class' => ['calendar-wrapper'],
+          ],
+        ];
+
+        $form['calendar_wrapper']['calendar'] = [
+          '#type' => 'html_tag',
+          '#tag' => 'div',
+          '#attributes' => [
+              'id' => 'fullcalendar-container',
+              'style' => 'height: 600px; margin-bottom: 20px;',
+          ],
+        ];
+
+      // Hidden fields
+        $form['selected_date'] = [
+          '#type' => 'hidden',
+          '#default_value' => $selected_date,
+          '#attributes' => ['id' => 'edit-selected-date'],
+        ];
+
+        $form['time'] = [
+          '#type' => 'hidden',
+          '#default_value' => '',
+          '#attributes' => ['id' => 'edit-time'],
+          '#required' => true,
+        ];
+
+      // Additional hidden field for time (backup)
+        $form['selected_time'] = [
+          '#type' => 'hidden',
+          '#default_value' => '',
+          '#attributes' => ['id' => 'edit-selected-time'],
+        ];
+
+      // Time display
+        $form['selected_time_display'] = [
+          '#type' => 'markup',
+          '#prefix' => '<div id="selected-time-display" class="selected-time-wrapper">',
+          '#suffix' => '</div>',
+          '#markup' => $this->t('Selected time: <span id="time-display">None</span>'),
+        ];
+
+      // Add some helpful information
+        $form['operating_days_info'] = [
+          '#type' => 'markup',
+          '#prefix' => '<div class="operating-days-info">',
+          '#suffix' => '</div>',
+          '#markup' => $this->t('Operating days: @days', [
+              '@days' => implode(', ', array_map('ucfirst', $operating_days))
+          ]),
+        ];
+
+      // Navigation buttons
+        $form['actions'] = $this->buildActions([
+          'back' => [
+              '#type' => 'submit',
+              '#value' => $this->t('Back'),
+              '#submit' => ['::backToPrevious'],
+              '#limit_validation_errors' => [],
+          ],
+          'next' => [
+              '#type' => 'submit',
+              '#value' => $this->t('Next'),
+              '#submit' => ['::submitStepFour'],
+              '#validate' => ['::validateStepFour'],
+          ],
+        ]);
+
+      // Add some CSS for the calendar
+        $form['#attached']['html_head'][] = [
+          [
+              '#type' => 'html_tag',
+              '#tag' => 'style',
+              '#value' => '
+                  .calendar-wrapper { 
+                      max-width: 900px; 
+                      margin: 0 auto; 
+                      padding: 20px;
+                  }
+                  .selected-time-wrapper {
+                      text-align: center;
+                      margin: 20px 0;
+                      font-size: 1.1em;
+                  }
+                  .operating-days-info {
+                      text-align: center;
+                      margin: 10px 0;
+                      color: #666;
+                  }
+                  .fc-day-disabled {
+                      background-color: #f8f9fa;
+                      cursor: not-allowed;
+                  }
+              ',
+          ],
+          'appointment_calendar_css'
+        ];
+
         return $form;
+    }
+
+  /**
+   * Validation handler for step four
+   */
+    public function validateStepFour(array &$form, FormStateInterface $form_state)
+    {
+        $time = $form_state->getValue('time');
+        $selected_time = $form_state->getValue('selected_time');
+
+        // Debug log
+        \Drupal::logger('appointment')->notice('Validating Step 4 with time: @time, selected_time: @selected_time', [
+          '@time' => $time,
+          '@selected_time' => $selected_time
+        ]);
+
+        // Check both time fields
+        if (empty($time) && empty($selected_time)) {
+            $form_state->setErrorByName('time', $this->t('Please select an available time slot.'));
+        }
+
+        // If time is empty but selected_time exists, use that
+        if (empty($time) && !empty($selected_time)) {
+            $form_state->setValue('time', $selected_time);
+        }
     }
 
     /**
@@ -480,9 +593,28 @@ class AppointmentMultiStepForm extends FormBase
      */
     public function submitStepFour(array &$form, FormStateInterface $form_state)
     {
-      // Overwrite with new values in step four if different.
-        $form_state->set('date', $form_state->getValue('date'));
-        $form_state->set('time', $form_state->getValue('time'));
+      // Get time from either field
+        $time = $form_state->getValue('time') ?: $form_state->getValue('selected_time');
+
+      // Debug log
+        \Drupal::logger('appointment')->notice('Submitting Step 4 with time: @time', [
+          '@time' => $time
+        ]);
+
+        if (!empty($time)) {
+            // Ensure time is in the correct format (HH:mm)
+            if (strlen($time) === 4) {
+                $time = substr($time, 0, 2) . ':' . substr($time, 2, 2);
+            }
+            $form_state->set('time', $time);
+        }
+
+      // Get the selected date
+        $selected_date = $form_state->getValue('selected_date');
+        if (!empty($selected_date)) {
+            $form_state->set('date', $selected_date);
+        }
+
         $form_state->set('step', 5);
         $form_state->setRebuild(true);
     }

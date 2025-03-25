@@ -67,7 +67,7 @@ class AppointmentListBuilder extends EntityListBuilder
    */
     public function buildRow(EntityInterface $entity)
     {
-      /** @var \Drupal\appointment\Entity\Appointment $entity */
+      /** @var \Drupal\appointment\Entity\Appointment\Appointment $entity */
         $row['id'] = $entity->id();
         $row['title'] = $entity->toLink();
         $row['customer_name'] = $entity->get('customer_name')->value;
